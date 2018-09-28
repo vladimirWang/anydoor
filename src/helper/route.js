@@ -7,6 +7,7 @@ const path = require('path')
 const config = require('../config/defaultConfig')
 const mime = require('./mime')
 const compress = require('./compress')
+const range = require('./range')
 // const chalk = require('chalk')
 
 const toPath = path.join(__dirname, '../template/dir.tpl')
@@ -20,7 +21,13 @@ module.exports = async function (req, res, filePath) {
       const contentType = mime(filePath)
       res.statusCode = 200
       res.setHeader('Content-Type', contentType)
-      let rs = fs.createReadStream(filePath)
+      let rs
+      const { code, start, end } = range(stats.size, req, res)
+      if (code === 200) {
+        rs = fs.createReadStream(filePath)
+      } else {
+        rs = fs.createReadStream(filePath, { start, end })
+      }
       if (filePath.match(config.compress)) {
         rs = compress(rs, req, res)
       }
