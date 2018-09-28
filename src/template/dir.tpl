@@ -8,7 +8,10 @@
 </head>
 <body>
 {{#each files}}
-  <a href="{{../dir}}/{{this}}">{{this}}</a>
+  <div>
+    <a href="{{../dir}}/{{file}}">【{{icon}}】{{file}}</a>
+  </div>
+
 {{/each}}
 </body>
 </html>
