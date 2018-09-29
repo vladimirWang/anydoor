@@ -47,7 +47,7 @@ module.exports = async function (req, res, filePath) {
         title: path.basename(filePath),
         dir: dir ? `/${dir}` : ''
       }
-      console.info('--')
+      console.info('-fix confict-')
       res.end(template(data))
     }
   } catch (err) {
