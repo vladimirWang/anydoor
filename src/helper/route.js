@@ -15,6 +15,7 @@ const source = fs.readFileSync(toPath, 'utf-8')
 const template = handleBars.compile(source)
 
 module.exports = async function (req, res, filePath) {
+
   try {
     const stats = await stat(filePath)
     if (stats.isFile()) {
