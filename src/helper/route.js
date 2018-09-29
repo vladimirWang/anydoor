@@ -15,7 +15,6 @@ const source = fs.readFileSync(toPath, 'utf-8')
 const template = handleBars.compile(source)
 
 module.exports = async function (req, res, filePath) {
-
   try {
     const stats = await stat(filePath)
     if (stats.isFile()) {
@@ -48,6 +47,7 @@ module.exports = async function (req, res, filePath) {
         title: path.basename(filePath),
         dir: dir ? `/${dir}` : ''
       }
+      console.info('--')
       res.end(template(data))
     }
   } catch (err) {
