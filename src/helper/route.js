@@ -1,58 +1,42 @@
-const fs = require('fs')
-const handleBars = require('handlebars')
 const promisify = require('util').promisify
+const chalk = require('chalk')
+const path = require('path')
+const fs = require('fs')
 const stat = promisify(fs.stat)
 const readdir = promisify(fs.readdir)
-const path = require('path')
-// const config = require('../config/defaultConfig')
-const mime = require('./mime')
-const compress = require('./compress')
-const range = require('./range')
-// const chalk = require('chalk')
-
 const toPath = path.join(__dirname, '../template/dir.tpl')
 const source = fs.readFileSync(toPath, 'utf-8')
-const template = handleBars.compile(source)
+const handlebars = require('handlebars')
+const template = handlebars.compile(source)
+// const config = require('../config/default')
+const mimeType = require('./mimeType')
+const compress = require('./compress')
 
-module.exports = async function (req, res, filePath, config) {
-  try {
-    const stats = await stat(filePath)
-    if (stats.isFile()) {
-      const contentType = mime(filePath)
-      res.setHeader('Content-Type', contentType)
-      let rs
-      const { code, start, end } = range(stats.size, req, res)
-      if (code === 200) {
-        res.statusCode = 200
-        rs = fs.createReadStream(filePath)
-      } else {
-        res.statusCode = 206
-        rs = fs.createReadStream(filePath, { start, end })
-      }
-      if (filePath.match(config.compress)) {
-        rs = compress(rs, req, res)
-      }
-      rs.pipe(res)
-    } else if (stats.isDirectory()) {
-      const files = await readdir(filePath)
-      res.statusCode = 200
-      res.setHeader('Content-Type', 'text/html')
-      const dir = path.relative(config.root, filePath)
-      const data = {
-        files: files.map(file => {
-          return {
-            file, icon: mime(file)
-          }
-        }),
-        title: path.basename(filePath),
-        dir: dir ? `/${dir}` : ''
-      }
-      console.info('-fix confict-')
-      res.end(template(data))
+module.exports = async (filePath, req, res, config) => {
+    try {
+        const stats = await stat(filePath)
+        if (stats.isFile()) {
+            const contentType = mimeType(filePath)
+            res.setHeader('Content-Type', contentType)
+            let rs
+            rs = fs.createReadStream(filePath)
+            if (filePath.match(config.compress)){
+                rs = compress(rs, req, res)
+            }
+            rs.pipe(res)
+        } else {
+            const files = await readdir(filePath)
+            const dir = path.relative(config.root, filePath)
+            const data = {
+                dir: dir ? `/${dir}` : '',
+                files,
+                title: path.extname(filePath)
+            }
+            res.end(template(data))
+        }
+    } catch (error) {
+        res.statusCode = 404
+        res.setHeader('Content-Type', 'text/plain')
+        res.end(`${error}, ${filePath} is invalid`)
     }
-  } catch (err) {
-    res.statusCode = 404
-    res.setHeader('Content-Type', 'text/plain')
-    res.end(`${filePath} is not a directory`)
-  }
 }
